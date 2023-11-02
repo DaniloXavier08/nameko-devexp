@@ -94,3 +94,28 @@ def test_can_update_order(orders_rpc, order):
 def test_can_delete_order(orders_rpc, order, db_session):
     orders_rpc.delete_order(order.id)
     assert not db_session.query(Order).filter_by(id=order.id).count()
+
+
+def test_list_orders(orders_rpc, order, order_details):
+    response = orders_rpc.list_orders()
+    assert len(response) == 1
+    assert response[0]["id"] == order.id
+
+    assert response[0]["order_details"]
+    details = response[0]["order_details"]
+    assert len(details) == 2
+    assert details[0]["product_id"] == "the_odyssey"
+    assert details[0]["price"] == "99.51"
+    assert details[0]["quantity"] == 1
+    assert details[1]["product_id"] == "the_enigma"
+    assert details[1]["price"] == "30.99"
+    assert details[1]["quantity"] == 8
+
+
+def test_list_many_orders(orders_rpc, db_session):
+    for _ in range(10):
+        db_session.add(Order())
+
+    db_session.commit()
+    response = orders_rpc.list_orders()
+    assert len(response) == 10
